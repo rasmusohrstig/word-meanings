@@ -2,6 +2,9 @@ package com.ohrstigbratt.wordmeanings
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.size
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProviders
 import com.google.android.material.tabs.TabLayout
 import com.ohrstigbratt.wordmeanings.ui.DefineWordFragment
 import com.ohrstigbratt.wordmeanings.ui.StartDuelFragment
@@ -23,6 +26,7 @@ class MainActivity : AppCompatActivity() {
         setUpTabs()
         setUpFragments()
         setUpPlayButton()
+        setUpViewModelObserver()
     }
 
     override fun onBackPressed() {
@@ -57,6 +61,9 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onTabSelected(tab: TabLayout.Tab?) {
+                (tab?.tag as? String)?.let { tag ->
+                    getViewModel().setSelectedTabTag(tag)
+                }
                 when (tab?.tag) {
                     practiceFragmentTag -> showPracticeFragment()
                     duelFragmentTag -> showDuelFragment()
@@ -93,6 +100,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setUpViewModelObserver() {
+        getViewModel().selectedTabTag.observe(this, Observer<String> { selectedTabTag ->
+            for (i in 0..tabs.size) {
+                val tab = tabs.getTabAt(i)
+                if (tab != null && tab.tag == selectedTabTag) {
+                    tab.select()
+                }
+            }
+        })
+    }
+
     private fun showDuelFragment() {
         val practiceFragment = supportFragmentManager.findFragmentByTag(practiceFragmentTag)
         val duelFragment = supportFragmentManager.findFragmentByTag(duelFragmentTag)
@@ -123,4 +141,6 @@ class MainActivity : AppCompatActivity() {
             null
         }
     }
+
+    private fun getViewModel() = ViewModelProviders.of(this).get(MainActivityViewModel::class.java)
 }
