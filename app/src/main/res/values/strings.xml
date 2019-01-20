@@ -2,6 +2,7 @@
     <string name="app_name">Word Meanings</string>
     <string name="practice">Practice</string>
     <string name="duel">Duel</string>
+    <string name="submit_guess">Submit guess</string>
 
     <string name="tag_practice" translatable="false">tag_practice</string>
     <string name="tag_duel" translatable="false">tag_practice</string>
