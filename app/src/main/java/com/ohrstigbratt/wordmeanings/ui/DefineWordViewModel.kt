@@ -2,6 +2,7 @@ package com.ohrstigbratt.wordmeanings.ui
 
 import android.app.Application
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -16,13 +17,20 @@ class DefineWordViewModel(val app: Application, val definitionFacade: WordDefini
 
     private var guessState = GuessState.GUESSING
     private var guessSubject = PublishSubject.create<String>()
+    private var definitionObservable: Observable<WordDefinition>? = null
+
+    fun newWord() {
+        definitionObservable = definitionFacade.getRandomDefinition()
+                .firstOrError()
+                .toObservable()
+                .cache()
+    }
 
     fun getViewState(): Observable<DefineWordViewState> {
         return guessSubject.flatMap { guess ->
-            definitionFacade.getRandomDefinition()
-                    .first(WordDefinition("", emptyList()))
-                    .toObservable()
+            getDefinitionObservable()
                     .map { definition ->
+                        Log.d("DefineWord", "definition: ${definition.word}")
                         DefineWordViewState.newInstance(app.applicationContext, definition, guess, definition.judgeGuess(guess))
                     }
         }
@@ -30,6 +38,16 @@ class DefineWordViewModel(val app: Application, val definitionFacade: WordDefini
 
     fun updateGuess(guess: String) {
         guessSubject.onNext(guess)
+    }
+
+    private fun getDefinitionObservable(): Observable<WordDefinition> {
+        definitionObservable?.let { return it }
+        val newObservable = definitionFacade.getRandomDefinition()
+                .firstOrError()
+                .toObservable()
+                .cache()
+        definitionObservable = newObservable
+        return newObservable
     }
 }
 

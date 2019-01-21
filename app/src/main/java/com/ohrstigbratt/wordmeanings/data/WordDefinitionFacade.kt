@@ -1,15 +1,23 @@
 package com.ohrstigbratt.wordmeanings.data
 
 import android.util.Log
+import com.ohrstigbratt.wordmeanings.R
+import com.ohrstigbratt.wordmeanings.WordMeaningsApp
 import com.ohrstigbratt.wordmeanings.data.domainmodel.WordDefinition
 import io.reactivex.Observable
+import io.reactivex.schedulers.Schedulers
 
-class WordDefinitionFacade {
+class WordDefinitionFacade(private val app: WordMeaningsApp) {
     fun getRandomDefinition(): Observable<WordDefinition> {
-        Log.d("DefineWord", "getRandomDefinition")
-        return Observable.just(WordDefinition(
-                "cross-reference",
-                listOf("a reference from one part of a book, index, or the like, to related material, as a word or illustration, in another part."))
-        )
+        return app.wordnikApi.getRandomWord(api_key = app.getString(R.string.wordnik_key))
+                .subscribeOn(Schedulers.io())
+                .flatMap { randomWordResponse ->
+                    Log.d("DefineWord", "randomWordResponse: ${randomWordResponse.word}")
+                    app.wordnikApi.getDefinition(randomWordResponse.word, api_key = app.getString(R.string.wordnik_key))
+                            .map { definitionResponse ->
+                                Log.d("DefineWord", "definitionResponse: ${definitionResponse.size}")
+                                WordDefinition(randomWordResponse.word, definitionResponse.map { it.text.orEmpty() })
+                            }
+                }
     }
 }

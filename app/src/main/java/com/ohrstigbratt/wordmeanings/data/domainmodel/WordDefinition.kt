@@ -1,5 +1,7 @@
 package com.ohrstigbratt.wordmeanings.data.domainmodel
 
+import android.util.Log
+
 data class WordDefinition(val word: String, val definitions: List<String>) {
     fun judgeGuess(guess: String): GuessState {
         val score = scoreGuess(guess)
@@ -15,46 +17,79 @@ data class WordDefinition(val word: String, val definitions: List<String>) {
     }
 }
 
+// Function that attempts to match the guess against the list of definitions and assigns a score
 private fun scoreGuessImplementation(guess: String, definitions: List<String>): Float {
     if (guess.isEmpty()) {
         return 0F
     }
     var maxScore = 0F
 
+    val lcGuess = guess.toLowerCase()
     // Look for match on whole definition
     definitions.forEach { definition ->
-        val editDistance = levenshtein(guess, definition)
-        val numOfCorrect = if (guess.length < definition.length) {
-            definition.length - editDistance
+        val lcDefinition = definition.toLowerCase()
+        val editDistance = levenshtein(lcGuess, lcDefinition)
+        val numOfCorrect = if (lcGuess.length < lcDefinition.length) {
+            lcDefinition.length - editDistance
         } else {
-            guess.length - editDistance
+            lcGuess.length - editDistance
         }
-        val score = numOfCorrect.toFloat() / definition.length
+        val score = numOfCorrect.toFloat() / lcDefinition.length
         if (score > maxScore) {
+            Log.d("DefineWord", "match: $definition")
             maxScore = score
         }
     }
 
     // Look for longest perfect partial match
     definitions.forEach { definition ->
-        if (definition.contains(guess)) {
+        if (definition.toLowerCase().contains(lcGuess)) {
             val score = when {
-                guess.length < 5 -> 0F
-                guess.length == 5 -> 0.1F
-                guess.length == 6 -> 0.2F
-                guess.length == 7 -> 0.3F
-                guess.length == 8 -> 0.4F
-                guess.length == 9 -> 0.5F
-                guess.length == 10 -> 0.6F
-                guess.length == 11 -> 0.8F
-                guess.length > 11 -> 1.0F
+                lcGuess.length < 5 -> 0F
+                lcGuess.length == 5 -> 0.1F
+                lcGuess.length == 6 -> 0.2F
+                lcGuess.length == 7 -> 0.3F
+                lcGuess.length == 8 -> 0.4F
+                lcGuess.length == 9 -> 0.5F
+                lcGuess.length == 10 -> 0.6F
+                lcGuess.length == 11 -> 0.8F
+                lcGuess.length > 11 -> 1.0F
                 else -> 0F
             }
             if (score > maxScore) {
+                Log.d("DefineWord", "match: $definition")
                 maxScore = score
             }
         }
     }
+
+    definitions.forEach { definition ->
+        var matchingChars = 0
+        lcGuess.split(" ").forEach { guessPart ->
+            if (definition.toLowerCase().contains(guessPart)) {
+                matchingChars += guessPart.length
+            }
+        }
+        val score = when {
+            matchingChars < 6 -> 0F
+            matchingChars == 6 -> 0.1F
+            matchingChars == 7 -> 0.2F
+            matchingChars == 8 -> 0.3F
+            matchingChars == 9 -> 0.4F
+            matchingChars == 10 -> 0.5F
+            matchingChars == 11 -> 0.6F
+            matchingChars == 12 -> 0.7F
+            matchingChars == 13 -> 0.8F
+            matchingChars > 13 -> 1.0F
+            else -> 0F
+        }
+        if (score > maxScore) {
+            Log.d("DefineWord", "match: $definition")
+            maxScore = score
+        }
+    }
+
+    Log.d("DefineWord", "score: $maxScore")
 
     return maxScore
 }
